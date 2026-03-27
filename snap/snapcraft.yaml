@@ -1,13 +1,12 @@
 name: colrpak
-title: Colr Pak
+title: Colr Pak (Unofficial snap package)
 base: core24
 summary: Browser-based color font editor with COLRv0/v1 support
 description: |
-  Colr Pak is  an open-source, browser-based,  cross-platform, 
-  font editor, with specialized   support for authoring 
-  COLRv0 and COLRv1 color fonts. It features   paint graph 
-  editing, live rendering, and color palette management with
-  opentype and webfont export. It is a fork of Fontra.
+  Colr Pak is a fork of Fontra, an open-source, browser-based,
+  cross-platform, variable-first font editor, with specialized
+  support for authoring COLRv0 and COLRv1 color fonts. It features
+  paint graph editing, live rendering, and palette management.
 
 website:
   - https://mitradranirban.github.io/colr-pak
@@ -23,7 +22,7 @@ contact:
 
 grade: stable
 confinement: strict
-adopt-info: colr-pak
+adopt-info: colrpak
 
 platforms:
   amd64:
@@ -34,17 +33,14 @@ platforms:
     build-for: arm64
 
 parts:
-  colr-pak:
-    plugin: dump
-    source: .
+  colrpak:
+    plugin: nil
     build-packages:
       - wget
-      - tar
       - curl
       - jq
     override-pull: |
       craftctl default
-      cd "$CRAFT_PART_SRC"
 
       echo "Fetching latest release from mitradranirban/colr-pak..."
       LATEST_RELEASE=$(curl -s https://api.github.com/repos/mitradranirban/colr-pak/releases/latest)
@@ -60,7 +56,7 @@ parts:
       craftctl set version="$VERSION"
 
       # Select archive based on target architecture
-      case "$CRAFT_TARGET_ARCH" in
+      case "$CRAFT_ARCH_BUILD_FOR" in
         amd64)
           ARCHIVE_FILE="colrpak-linux.tar.gz"
           ;;
@@ -68,13 +64,13 @@ parts:
           ARCHIVE_FILE="colrpak-linux-arm64.tar.gz"
           ;;
         *)
-          echo "ERROR: Unsupported architecture: $CRAFT_TARGET_ARCH"
+          echo "ERROR: Unsupported architecture: $CRAFT_ARCH_BUILD_FOR"
           exit 1
           ;;
       esac
 
       DOWNLOAD_URL="https://github.com/mitradranirban/colr-pak/releases/latest/download/$ARCHIVE_FILE"
-      echo "Downloading $DOWNLOAD_URL for $CRAFT_TARGET_ARCH..."
+      echo "Downloading $DOWNLOAD_URL for $CRAFT_ARCH_BUILD_FOR..."
 
       wget --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36" \
         "$DOWNLOAD_URL" -O "$ARCHIVE_FILE"
@@ -86,20 +82,16 @@ parts:
 
       echo "Extracting $ARCHIVE_FILE..."
       tar -xzf "$ARCHIVE_FILE"
-
-      if [ -f "colrpak" ]; then
-        echo "Setting executable permissions on colrpak binary..."
-        chmod +x colrpak
-      else
-        echo "ERROR: colrpak binary not found after extraction"
-        ls -la
-        exit 1
-      fi
-
       rm "$ARCHIVE_FILE"
 
-    organize:
-      colrpak: bin/colrpak
+    override-build: |
+      if [ -f "$CRAFT_PART_SRC/colrpak" ]; then
+        install -Dm755 "$CRAFT_PART_SRC/colrpak" "$CRAFT_PART_INSTALL/bin/colrpak"
+      else
+        echo "ERROR: colrpak binary not found"
+        ls -la "$CRAFT_PART_SRC"
+        exit 1
+      fi
 
     stage-packages:
       - libgl1
@@ -126,7 +118,7 @@ plugs:
     private: true
 
 apps:
-  colr-pak:
+  colrpak:
     command: bin/colrpak
     desktop: snap/gui/colrpak.desktop
     environment:
