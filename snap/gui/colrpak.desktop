@@ -1,0 +1,8 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=0.1
+Terminal=false
+Type=Application
+Name=ColrPak
+Icon=Icon=${SNAP}/meta/gui/colrpak.svg
+Exec=colrpak

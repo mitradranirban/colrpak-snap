@@ -1,0 +1,144 @@
+name: colr-pak
+title: Colr Pak
+base: core24
+summary: Browser-based color font editor with COLRv0/v1 support
+description: |
+  Colr Pak is  an open-source, browser-based,  cross-platform, 
+  font editor, with specialized   support for authoring 
+  COLRv0 and COLRv1 color fonts. It features   paint graph 
+  editing, live rendering, and color palette management with
+  opentype and webfont export. It is a fork of Fontra.
+
+website:
+  - https://mitradranirban.github.io/colr-pak
+
+source-code:
+  - https://github.com/mitradranirban/colr-pak
+
+issues:
+  - https://github.com/mitradranirban/colr-pak/issues
+
+contact:
+  - https://github.com/mitradranirban/colr-pak
+
+grade: stable
+confinement: strict
+adopt-info: colr-pak
+
+platforms:
+  amd64:
+    build-on: amd64
+    build-for: amd64
+  arm64:
+    build-on: arm64
+    build-for: arm64
+
+parts:
+  colr-pak:
+    plugin: dump
+    source: .
+    build-packages:
+      - wget
+      - tar
+      - curl
+      - jq
+    override-pull: |
+      craftctl default
+      cd "$CRAFT_PART_SRC"
+
+      echo "Fetching latest release from mitradranirban/colr-pak..."
+      LATEST_RELEASE=$(curl -s https://api.github.com/repos/mitradranirban/colr-pak/releases/latest)
+      LATEST_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+
+      if [ "$LATEST_TAG" = "null" ] || [ -z "$LATEST_TAG" ]; then
+        echo "ERROR: Failed to fetch latest release tag"
+        exit 1
+      fi
+
+      echo "Latest release tag: $LATEST_TAG"
+      VERSION="${LATEST_TAG#v}"
+      craftctl set version="$VERSION"
+
+      # Select archive based on target architecture
+      case "$CRAFT_TARGET_ARCH" in
+        amd64)
+          ARCHIVE_FILE="colrpak-linux.tar.gz"
+          ;;
+        arm64)
+          ARCHIVE_FILE="colrpak-linux-arm64.tar.gz"
+          ;;
+        *)
+          echo "ERROR: Unsupported architecture: $CRAFT_TARGET_ARCH"
+          exit 1
+          ;;
+      esac
+
+      DOWNLOAD_URL="https://github.com/mitradranirban/colr-pak/releases/latest/download/$ARCHIVE_FILE"
+      echo "Downloading $DOWNLOAD_URL for $CRAFT_TARGET_ARCH..."
+
+      wget --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36" \
+        "$DOWNLOAD_URL" -O "$ARCHIVE_FILE"
+
+      if [ ! -f "$ARCHIVE_FILE" ] || [ ! -s "$ARCHIVE_FILE" ]; then
+        echo "ERROR: Failed to download $ARCHIVE_FILE"
+        exit 1
+      fi
+
+      echo "Extracting $ARCHIVE_FILE..."
+      tar -xzf "$ARCHIVE_FILE"
+
+      if [ -f "colrpak" ]; then
+        echo "Setting executable permissions on colrpak binary..."
+        chmod +x colrpak
+      else
+        echo "ERROR: colrpak binary not found after extraction"
+        ls -la
+        exit 1
+      fi
+
+      rm "$ARCHIVE_FILE"
+
+    organize:
+      colrpak: bin/colrpak
+
+    stage-packages:
+      - libgl1
+      - libegl1
+      - libglx-mesa0
+      - libxcb-cursor0
+      - libxcb1
+      - libxcb-render0
+      - libxcb-shm0
+      - libxcb-randr0
+      - libxcb-xfixes0
+      - libxkbcommon0
+      - libqt6gui6t64
+      - libqt6core6t64
+      - libqt6widgets6t64
+      - libstdc++6
+      - qt6-qpa-plugins
+
+icon: snap/gui/colrpak.svg
+license: GPL-3.0+
+
+plugs:
+  shared-memory:
+    private: true
+
+apps:
+  colr-pak:
+    command: bin/colrpak
+    desktop: snap/gui/colrpak.desktop
+    environment:
+      QT_QPA_PLATFORM: xcb
+      QT_QPA_PLATFORM_PLUGIN_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/qt6/plugins/platforms
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/mesa:$SNAP/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR
+    plugs:
+      - x11
+      - opengl
+      - network
+      - home
+      - removable-media
+      - desktop
+      - desktop-legacy
+      - wayland
