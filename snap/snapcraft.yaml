@@ -1,5 +1,5 @@
 name: colrpak
-title: Colr Pak (Unofficial snap package)
+title: Colr Pak
 base: core24
 summary: Browser-based color font editor with COLRv0/v1 support
 description: |
