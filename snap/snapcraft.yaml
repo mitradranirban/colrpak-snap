@@ -23,6 +23,11 @@ contact:
 grade: stable
 confinement: strict
 adopt-info: colrpak
+layout:
+  /usr/share/icons/hicolor/64x64/apps/colrpak.svg:
+    symlink: $SNAP/snap/gui/colrpak.svg
+  /usr/share/applications/colrpak.desktop:
+    symlink: $SNAP/snap/gui/colrpak.desktop
 
 platforms:
   amd64:
@@ -87,6 +92,10 @@ parts:
     override-build: |
       if [ -f "$CRAFT_PART_SRC/colrpak" ]; then
         install -Dm755 "$CRAFT_PART_SRC/colrpak" "$CRAFT_PART_INSTALL/bin/colrpak"
+        mkdir -p "$CRAFT_PART_INSTALL/snap/gui"
+        cp "$CRAFT_PROJECT_DIR/snap/gui/colrpak.desktop" "$CRAFT_PART_INSTALL/snap/gui/"
+        cp "$CRAFT_PROJECT_DIR/snap/gui/colrpak.svg" "$CRAFT_PART_INSTALL/snap/gui/"
+
       else
         echo "ERROR: colrpak binary not found"
         ls -la "$CRAFT_PART_SRC"
@@ -111,6 +120,7 @@ parts:
       - qt6-qpa-plugins
 
 icon: snap/gui/colrpak.svg
+
 license: GPL-3.0+
 
 plugs:
